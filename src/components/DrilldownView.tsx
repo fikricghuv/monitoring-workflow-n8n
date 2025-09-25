@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase, WorkflowExecution, WorkflowStep } from '../lib/supabase'
 import { LoadingSpinner } from './LoadingSpinner'
 import { format, parseISO } from 'date-fns'
-import { ArrowRight, Code, AlertCircle, Search } from 'lucide-react'
+import { ArrowRight, Code, AlertCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Filters } from '../hooks/useWorkflowData'
 import { useWorkflowData } from '../hooks/useWorkflowData'
 
@@ -18,6 +18,8 @@ export const DrilldownView: React.FC<DrilldownViewProps> = ({ executionId, filte
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     if (executionId) {
@@ -76,6 +78,21 @@ export const DrilldownView: React.FC<DrilldownViewProps> = ({ executionId, filte
     exec.id.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Pagination for executions list
+  const totalPages = Math.ceil(filteredExecutions.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentExecutions = filteredExecutions.slice(startIndex, endIndex)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  // Reset to page 1 when search term changes
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
   if (!executionId) {
     return (
       <div className="space-y-6">
@@ -96,19 +113,26 @@ export const DrilldownView: React.FC<DrilldownViewProps> = ({ executionId, filte
         {/* Workflow Executions List */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Select Workflow Execution ({filteredExecutions.length} found)
-            </h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Select Workflow Execution ({filteredExecutions.length} found)
+              </h3>
+              {totalPages > 1 && (
+                <span className="text-sm text-gray-500">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredExecutions.length)} of {filteredExecutions.length}
+                </span>
+              )}
+            </div>
           </div>
           
           <div className="max-h-96 overflow-y-auto">
-            {filteredExecutions.length === 0 ? (
+            {currentExecutions.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
-                No workflow executions found
+                {filteredExecutions.length === 0 ? 'No workflow executions found' : 'No executions on this page'}
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {filteredExecutions.slice(0, 50).map((exec) => (
+                {currentExecutions.map((exec) => (
                   <div
                     key={exec.id}
                     onClick={() => window.location.hash = `#execution-${exec.id}`}
@@ -138,6 +162,62 @@ export const DrilldownView: React.FC<DrilldownViewProps> = ({ executionId, filte
               </div>
             )}
           </div>
+          
+          {/* Pagination for executions list */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 rounded-md border border-gray-300 bg-white text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-1 rounded-md text-sm font-medium ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
+                </div>
+                
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 rounded-md border border-gray-300 bg-white text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     )
