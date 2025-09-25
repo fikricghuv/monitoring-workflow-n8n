@@ -39,10 +39,10 @@ export const useWorkflowData = (filters: Filters) => {
         .order('created_at', { ascending: false })
 
       if (filters.workflowId) {
-        executionsQuery = executionsQuery.ilike('workflow_id::text', `%${filters.workflowId}%`)
+        executionsQuery = executionsQuery.eq('workflow_id', filters.workflowId)
       }
       if (filters.executionId) {
-        executionsQuery = executionsQuery.ilike('id::text', `%${filters.executionId}%`)
+        executionsQuery = executionsQuery.eq('id', filters.executionId)
       }
       if (filters.overall_status) {
         executionsQuery = executionsQuery.eq('overall_status', filters.overall_status)
