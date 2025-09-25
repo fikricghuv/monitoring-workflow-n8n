@@ -72,7 +72,7 @@ export const DrilldownView: React.FC<DrilldownViewProps> = ({ executionId, filte
 
   // Filter executions based on search term
   const filteredExecutions = executions.filter(exec => 
-    exec.workflow_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    exec.workflow_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     exec.id.toLowerCase().includes(searchTerm.toLowerCase())
   )
 

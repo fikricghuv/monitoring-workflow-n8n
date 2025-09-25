@@ -12,11 +12,10 @@ export interface WorkflowQueue {
 
 export interface Filters {
   workflowId?: string
-  id?: string
+  executionId?: string
   overall_status?: string
   startDate?: Date
   endDate?: Date
-  executionIds?: string[]
 }
 
 export const useWorkflowData = (filters: Filters) => {
@@ -40,19 +39,23 @@ export const useWorkflowData = (filters: Filters) => {
         .order('created_at', { ascending: false })
 
       if (filters.workflowId) {
-        executionsQuery = executionsQuery.eq('workflow_id', filters.workflowId)
+        executionsQuery = executionsQuery.ilike('workflow_id', `%${filters.workflowId}%`)
+      }
+      if (filters.executionId) {
+        executionsQuery = executionsQuery.ilike('id', `%${filters.executionId}%`)
       }
       if (filters.overall_status) {
         executionsQuery = executionsQuery.eq('overall_status', filters.overall_status)
       }
       if (filters.startDate) {
-        executionsQuery = executionsQuery.gte('created_at', filters.startDate.toISOString())
+        const startOfDay = new Date(filters.startDate)
+        startOfDay.setHours(0, 0, 0, 0)
+        executionsQuery = executionsQuery.gte('created_at', startOfDay.toISOString())
       }
       if (filters.endDate) {
-        executionsQuery = executionsQuery.lte('created_at', filters.endDate.toISOString())
-      }
-      if (filters.id) {
-        executionsQuery = executionsQuery.eq('id', filters.id)
+        const endOfDay = new Date(filters.endDate)
+        endOfDay.setHours(23, 59, 59, 999)
+        executionsQuery = executionsQuery.lte('created_at', endOfDay.toISOString())
       }
 
       const { data: executionsData, error: executionsError } = await executionsQuery

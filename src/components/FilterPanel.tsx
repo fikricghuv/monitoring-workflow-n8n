@@ -99,6 +99,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
         {/* End Date Filter */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Calendar className="h-4 w-4 inline mr-1" />
             End Date
           </label>
           <input
